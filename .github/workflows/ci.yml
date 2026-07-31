@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  host-tests:
+    name: Editor core unit tests (host)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and run core tests
+        run: ./test/host/run.sh
+
+  companion-tests:
+    name: Companion tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install companion with test extras
+        run: pip install -e "companion[test]"
+      - name: Run pytest
+        run: pytest companion
+
+  firmware-build:
+    name: Firmware build (PlatformIO)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+          restore-keys: pio-${{ runner.os }}-
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+      # Environments build one at a time: pio package installs are not safe
+      # to run concurrently against a shared ~/.platformio.
+      - name: Build X4 firmware
+        run: pio run -e xteink_x4
+      - name: Build X3 firmware
+        run: pio run -e xteink_x3
+      - name: Upload X4 artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: inkwriter-xteink_x4-firmware
+          path: .pio/build/xteink_x4/firmware.bin
+          if-no-files-found: error
+      - name: Upload X3 artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: inkwriter-xteink_x3-firmware
+          path: .pio/build/xteink_x3/firmware.bin
+          if-no-files-found: error
