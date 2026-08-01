@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "inkwriter-companion"
+version = "0.1.0"
+description = "Sync server and export tools for the InkWriter writing appliance"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.scripts]
+inkwriter = "inkwriter.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["inkwriter*"]
